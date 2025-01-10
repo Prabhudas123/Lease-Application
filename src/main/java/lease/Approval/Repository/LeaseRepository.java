@@ -26,4 +26,7 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
             @Param("endDate") LocalDateTime endDate
     );
 
+    @Query("SELECT l FROM Lease l WHERE l.leaseEndDate BETWEEN :start AND :end AND l.status = 'APPROVED'")
+    List<Lease> findExpiringLeases(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
 }

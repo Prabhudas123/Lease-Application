@@ -85,19 +85,29 @@ public class Lease {
 
     private LocalDateTime createdAt;
 
+    public LocalDateTime getLeaseEndDate() {
+        return leaseEndDate;
+    }
+
+    public void setLeaseEndDate(LocalDateTime leaseEndDate) {
+        this.leaseEndDate = leaseEndDate;
+    }
+
+    private LocalDateTime leaseEndDate;
     private String approvedBy; // User who approved the lease
     private int approvalLevel; // 0 = none, 1 = first-level, 2 = second-level
 
     public Lease() {
     }
 
-    public Lease(Long id, String partnerName, String assetType, Double leaseAmount, String status, LocalDateTime createdAt, String approvedBy, int approvalLevel) {
+    public Lease(Long id, String partnerName, String assetType, Double leaseAmount, String status, LocalDateTime createdAt, LocalDateTime leaseEndDate, String approvedBy, int approvalLevel) {
         this.id = id;
         this.partnerName = partnerName;
         this.assetType = assetType;
         this.leaseAmount = leaseAmount;
         this.status = status;
         this.createdAt = createdAt;
+        this.leaseEndDate = leaseEndDate;
         this.approvedBy = approvedBy;
         this.approvalLevel = approvalLevel;
     }
