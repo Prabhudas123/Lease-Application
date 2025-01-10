@@ -1,6 +1,8 @@
 package lease.Approval.Repository;
 
 import lease.Approval.Model.Lease;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -18,12 +20,13 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
             "AND (:assetType IS NULL OR l.assetType = :assetType) " +
             "AND (:status IS NULL OR l.status = :status) " +
             "AND (:startDate IS NULL OR :endDate IS NULL OR l.createdAt BETWEEN :startDate AND :endDate)")
-    List<Lease> searchLeases(
+    Page<Lease> searchLeases(
             @Param("partnerName") String partnerName,
             @Param("assetType") String assetType,
             @Param("status") String status,
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
     );
 
     @Query("SELECT l FROM Lease l WHERE l.leaseEndDate BETWEEN :start AND :end AND l.status = 'APPROVED'")

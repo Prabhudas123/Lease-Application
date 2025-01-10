@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -149,8 +152,14 @@ public class LeaseApprovalService {
         leaseRepository.save(lease);
     }
 
-    public List<Lease> searchLeases(String partnerName, String assetType, String status, LocalDateTime startDate, LocalDateTime endDate) {
-        return leaseRepository.searchLeases(partnerName, assetType, status, startDate, endDate);
+    public List<Lease> searchLeases(String partnerName, String assetType, String status, LocalDateTime startDate, LocalDateTime endDate,Integer pageNumber,
+                                    Integer pageSize,
+                                    String sortBy,
+                                    String dir) {
+        Sort sort = dir.equalsIgnoreCase("asc")?Sort.by(sortBy).ascending()
+                :Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNumber,pageSize,sort);
+        return leaseRepository.searchLeases(partnerName, assetType, status, startDate, endDate,pageable).getContent();
     }
 
 }

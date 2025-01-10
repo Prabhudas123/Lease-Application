@@ -2,6 +2,7 @@ package lease.Approval.Controller;
 
 import lease.Approval.Model.Lease;
 import lease.Approval.Service.LeaseApprovalService;
+import lease.Approval.Utils.AppConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -52,12 +53,16 @@ public class LeaseApprovalController {
 
     @GetMapping("/search")
     public ResponseEntity<List<Lease>> searchLeases(
+            @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(defaultValue = AppConstants.PAGE_SIZE) Integer pageSize,
+            @RequestParam(defaultValue = AppConstants.SORT_BY) String sortBy,
+            @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortDir,
             @RequestParam(required = false) String partnerName,
             @RequestParam(required = false) String assetType,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        List<Lease> leases = leaseApprovalService.searchLeases(partnerName, assetType, status, startDate, endDate);
+        List<Lease> leases = leaseApprovalService.searchLeases(partnerName, assetType, status, startDate, endDate,pageNumber,pageSize,sortBy,sortDir);
         return ResponseEntity.ok(leases);
     }
 
