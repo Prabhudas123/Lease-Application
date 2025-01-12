@@ -85,6 +85,43 @@ public class Lease {
 
     private LocalDateTime createdAt;
 
+    private String renewedBy;  // User who approved the renewal
+    private LocalDateTime renewalTimestamp;  // Timestamp when the renewal was approved
+    private LocalDateTime renewalEndDate;  // New lease end date after renewal (optional)
+    private int renewalCount;
+
+    public String getRenewedBy() {
+        return renewedBy;
+    }
+
+    public void setRenewedBy(String renewedBy) {
+        this.renewedBy = renewedBy;
+    }
+
+    public LocalDateTime getRenewalTimestamp() {
+        return renewalTimestamp;
+    }
+
+    public void setRenewalTimestamp(LocalDateTime renewalTimestamp) {
+        this.renewalTimestamp = renewalTimestamp;
+    }
+
+    public LocalDateTime getRenewalEndDate() {
+        return renewalEndDate;
+    }
+
+    public void setRenewalEndDate(LocalDateTime renewalEndDate) {
+        this.renewalEndDate = renewalEndDate;
+    }
+
+    public int getRenewalCount() {
+        return renewalCount;
+    }
+
+    public void setRenewalCount(int renewalCount) {
+        this.renewalCount = renewalCount;
+    }
+
     public LocalDateTime getLeaseEndDate() {
         return leaseEndDate;
     }
@@ -100,13 +137,17 @@ public class Lease {
     public Lease() {
     }
 
-    public Lease(Long id, String partnerName, String assetType, Double leaseAmount, String status, LocalDateTime createdAt, LocalDateTime leaseEndDate, String approvedBy, int approvalLevel) {
+    public Lease(Long id, String partnerName, String assetType, Double leaseAmount, String status, LocalDateTime createdAt, String renewedBy, LocalDateTime renewalTimestamp, LocalDateTime renewalEndDate, int renewalCount, LocalDateTime leaseEndDate, String approvedBy, int approvalLevel) {
         this.id = id;
         this.partnerName = partnerName;
         this.assetType = assetType;
         this.leaseAmount = leaseAmount;
         this.status = status;
         this.createdAt = createdAt;
+        this.renewedBy = renewedBy;
+        this.renewalTimestamp = renewalTimestamp;
+        this.renewalEndDate = renewalEndDate;
+        this.renewalCount = renewalCount;
         this.leaseEndDate = leaseEndDate;
         this.approvedBy = approvedBy;
         this.approvalLevel = approvalLevel;

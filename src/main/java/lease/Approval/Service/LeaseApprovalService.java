@@ -14,9 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @Slf4j
@@ -28,17 +30,71 @@ public class LeaseApprovalService {
     @Autowired
     private ApprovalRepository approvalRepository;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     private static final Logger logger = LoggerFactory.getLogger(LeaseApprovalService.class);
 
-    public Lease createLease(Lease lease) {
-        logger.info("creating new lease request...!");
-        lease.setStatus("PENDING");
-        lease.setCreatedAt(LocalDateTime.now());
-        logger.info("created new lease request...!");
-        return leaseRepository.save(lease);
+    public Lease createLease(Lease lease) throws ExecutionException, InterruptedException {
+        logger.info("Checking Credit Score from Another Microservice");
+        String response = getCreditReport();
+        System.out.println("RESPONSE : "+response+" *********");
+            logger.info("creating new lease request...!");
+            lease.setStatus("PENDING");
+            lease.setCreatedAt(LocalDateTime.now());
+            logger.info("created new lease request...!");
+            return leaseRepository.save(lease);
     }
 
-    public String approveLease(Long leaseId, String approver, String comments) {
+
+    public String getCreditReport() {
+            String url = "http://localhost:8086/1/creditReport";  // Your service URL
+            return restTemplate.getForObject(url, String.class);
+    }
+
+    // Fallback method (same signature as main method)
+    public String fallbackCreditReport(Exception ex) {
+        // Log the fallback invocation
+        System.out.println("Fallback invoked: Service is unavailable.");
+        return "Fallback: Service is currently unavailable. Reason: " + ex.getMessage();
+    }
+
+    public Lease renewLease(Long id, String approver) {
+        Lease lease = leaseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lease not found"));
+
+        // Check if the lease can be renewed (check if it's not already renewed)
+        if ("RENEWED".equals(lease.getStatus())) {
+            throw new RuntimeException("Lease is already renewed.");
+        }
+
+        // Update lease details for renewal
+        lease.setStatus("RENEWED");
+        lease.setRenewedBy(approver);
+        lease.setRenewalTimestamp(LocalDateTime.now());
+        lease.setRenewalCount(lease.getRenewalCount() + 1);
+
+        // Extend the lease end date (example: add 1 year)
+        lease.setRenewalEndDate(lease.getLeaseEndDate().plusYears(1));
+
+        // Save the renewed lease
+        leaseRepository.save(lease);
+
+        // Initiate first-level approval
+        Approval approval = new Approval();
+        approval.setLeaseId(lease.getId());
+        approval.setApprovedBy(approver);
+        approval.setStatus("PENDING");
+        approval.setComments("Lease renewal awaiting approval.");
+        approval.setTimestamp(LocalDateTime.now());
+        approval.setIsRenewal(true);
+        approvalRepository.save(approval);
+
+        return lease;
+    }
+
+
+   /* public String approveLease(Long leaseId, String approver, String comments) {
         Lease lease = leaseRepository.findById(leaseId)
                 .orElseThrow(() -> new LeaseNotFoundException("Lease not found"));
 
@@ -83,9 +139,12 @@ public class LeaseApprovalService {
 
         return "Lease denied successfully!";
     }
+    */
 
     // First-level approval
     public Lease approveFirstLevel(String leaseId, String approver) {
+
+        //calling credit score api
         Lease lease = getLeaseById(leaseId); // Fetch lease by ID
         if (!"PENDING".equals(lease.getStatus())) {
             throw new ApprovedException("Lease must be in PENDING state for first-level approval.");
@@ -124,11 +183,51 @@ public class LeaseApprovalService {
         approval.setStatus("APPROVED");
         approval.setComments("SECOND_LEVEL_APPROVED");
         approval.setTimestamp(LocalDateTime.now());
-        approvalRepository.save(approval);
-
         return lease;
     }
 
+    public Approval approveLease(Long leaseId, String approver, String approvalLevel) {
+        Lease lease = leaseRepository.findById(leaseId)
+                .orElseThrow(() -> new RuntimeException("Lease not found"));
+
+        // Find the pending approval for the lease
+        Approval approval = approvalRepository.findTopByLeaseIdAndStatusAndIsRenewal(leaseId, "PENDING", true)
+                .orElseThrow(() -> new RuntimeException("No pending renewal approval found"));
+
+        if ("FIRST_LEVEL".equals(approvalLevel) && "PENDING".equals(approval.getStatus())) {
+            approval.setStatus("APPROVED");
+            approval.setApprovedBy(approver);
+            approval.setTimestamp(LocalDateTime.now());
+
+            // Save first-level approval
+            approvalRepository.save(approval);
+
+            // Check if the second-level approval is required
+            if (lease.getApprovalLevel() == 1) {
+                lease.setStatus("APPROVED");
+                leaseRepository.save(lease);
+            }
+
+            return approval;
+        }
+
+        if ("SECOND_LEVEL".equals(approvalLevel) && "APPROVED".equals(approval.getStatus())) {
+            approval.setStatus("APPROVED");
+            approval.setApprovedBy(approver);
+            approval.setTimestamp(LocalDateTime.now());
+
+            // Save second-level approval
+            approvalRepository.save(approval);
+
+            // Update the lease to final approved status
+            lease.setStatus("APPROVED");
+            leaseRepository.save(lease);
+
+            return approval;
+        }
+
+        throw new RuntimeException("Invalid approval sequence or status.");
+    }
     // Reject lease
     public Lease rejectLease(String leaseId, String approver) {
         Lease lease = getLeaseById(leaseId);

@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/leases/documents")
+@RequestMapping("/documents")
 public class DocumentController {
 
     @Autowired

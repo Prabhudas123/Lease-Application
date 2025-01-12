@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/leases")
@@ -18,19 +19,27 @@ public class LeaseApprovalController {
     @Autowired
     private LeaseApprovalService leaseApprovalService;
 
+
     @PostMapping("/create")
-    public Lease createLease(@RequestBody Lease lease) {
+    public Lease createLease(@RequestBody Lease lease) throws ExecutionException, InterruptedException {
         return leaseApprovalService.createLease(lease);
     }
 
-    @PostMapping("/{id}/approve")
-    public String approveLease(@PathVariable Long id, @RequestParam String approver, @RequestParam String comments) {
-        return leaseApprovalService.approveLease(id, approver, comments);
-    }
+//    @PostMapping("/{id}/approve")
+//    public String approveLease(@PathVariable Long id, @RequestParam String approver, @RequestParam String comments) {
+//        return leaseApprovalService.approveLease(id, approver, comments);
+//    }
 
-    @PostMapping("/{id}/deny")
-    public String denyLease(@PathVariable Long id, @RequestParam String approver, @RequestParam String comments) {
-        return leaseApprovalService.denyLease(id, approver, comments);
+//    @PostMapping("/{id}/deny")
+//    public String denyLease(@PathVariable Long id, @RequestParam String approver, @RequestParam String comments) {
+//        return leaseApprovalService.denyLease(id, approver, comments);
+//    }
+
+
+    @PostMapping("/{id}/renew")
+    public ResponseEntity<Lease> renewLease(@PathVariable Long id, @RequestParam String approver) {
+        Lease lease = leaseApprovalService.renewLease(id, approver);
+        return ResponseEntity.ok(lease);
     }
 
     @PostMapping("/{leaseId}/approve/first-level")

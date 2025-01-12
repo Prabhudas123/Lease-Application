@@ -4,11 +4,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Builder
 public class Approval {
 
     @Id
@@ -19,6 +21,15 @@ public class Approval {
     private String approvedBy;
     private String status; // APPROVED, DENIED
     private String comments;
+    private Boolean isRenewal;
+
+    public Boolean getRenewal() {
+        return isRenewal;
+    }
+
+    public void setIsRenewal(Boolean renewal) {
+        isRenewal = renewal;
+    }
 
     private LocalDateTime timestamp;
 
@@ -75,13 +86,13 @@ public class Approval {
 // Getters and Setters
 
 
-    public Approval(Long id, Long leaseId, String approvedBy, String status, String comments, LocalDateTime timestamp) {
+    public Approval(Long id, Long leaseId, String approvedBy, String status, String comments, Boolean isRenewal, LocalDateTime timestamp) {
         this.id = id;
         this.leaseId = leaseId;
         this.approvedBy = approvedBy;
         this.status = status;
         this.comments = comments;
+        this.isRenewal = isRenewal;
         this.timestamp = timestamp;
     }
-
 }
