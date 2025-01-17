@@ -48,7 +48,7 @@ public class LeaseApprovalService {
 
 
     public String getCreditReport() {
-            String url = "http://localhost:8086/1/creditReport";  // Your service URL
+            String url = "http://localhost:8081/1/creditReport";  // Your service URL
             return restTemplate.getForObject(url, String.class);
     }
 
