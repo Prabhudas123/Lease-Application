@@ -22,6 +22,8 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @EnableMethodSecurity
 public class SecurityConfiguration {
     private static final String[] WHITE_LIST_URL = {
+            "/leases/forgot-password",
+            "/leases/reset-password",
             "/api/v1/auth/**",
             "/v2/api-docs",
             "/v3/api-docs",
@@ -50,7 +52,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(req ->
                         req.requestMatchers(WHITE_LIST_URL)
                                 .permitAll()
-                                .requestMatchers("/leases/**").hasAnyRole(ADMIN.name(), MANAGER.name(), USER.name())
+                                .requestMatchers(GET,"/leases/**").hasAnyRole(ADMIN.name(), MANAGER.name(), USER.name())
                                 //.requestMatchers(GET, "/leases/**").hasAnyAuthority(ADMIN_READ.name(), MANAGER_READ.name())
                                 .requestMatchers(POST, "/leases/**").hasAnyAuthority(ADMIN_CREATE.name(), MANAGER_CREATE.name())
                                 .requestMatchers(PUT, "/leases/**").hasAnyAuthority(ADMIN_UPDATE.name(), MANAGER_UPDATE.name())

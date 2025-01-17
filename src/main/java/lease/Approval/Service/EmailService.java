@@ -66,4 +66,17 @@ public class EmailService {
         return sent;
     }
 
+    public void sendEmail(String to, String resetLink) {
+        MimeMessage message = sender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject("Reset Your Password");
+            helper.setText("Click the link to reset your password: " + resetLink, true);
+            sender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send email");
+        }
+    }
+
 }

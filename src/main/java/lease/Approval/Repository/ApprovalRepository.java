@@ -1,7 +1,9 @@
 package lease.Approval.Repository;
 
+import jakarta.persistence.LockModeType;
 import lease.Approval.Model.Approval;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Repository;
 
