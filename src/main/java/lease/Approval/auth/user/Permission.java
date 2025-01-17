@@ -1,7 +1,5 @@
 package lease.Approval.auth.user;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 public enum Permission {
 
