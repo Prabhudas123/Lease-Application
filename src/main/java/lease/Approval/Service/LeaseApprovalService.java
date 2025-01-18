@@ -6,6 +6,7 @@ import lease.Approval.Model.Approval;
 import lease.Approval.Model.Lease;
 import lease.Approval.Repository.ApprovalRepository;
 import lease.Approval.Repository.LeaseRepository;
+import lease.Approval.auth.user.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,11 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static lease.Approval.Utils.AppConstants.FIRST_LEVEL_APPROVAL;
+import static lease.Approval.Utils.AppConstants.SECOND_LEVEL_APPROVAL;
 
 @Service
 @Slf4j
@@ -32,24 +38,30 @@ public class LeaseApprovalService {
 
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private EmailService emailService;
+
 
     private static final Logger logger = LoggerFactory.getLogger(LeaseApprovalService.class);
 
     public Lease createLease(Lease lease) throws ExecutionException, InterruptedException {
         logger.info("Checking Credit Score from Another Microservice");
-        String response = getCreditReport();
-        System.out.println("RESPONSE : "+response+" *********");
-            logger.info("creating new lease request...!");
-            lease.setStatus("PENDING");
-            lease.setCreatedAt(LocalDateTime.now());
-            logger.info("created new lease request...!");
-            return leaseRepository.save(lease);
+        //  String response = getCreditReport();
+        //  System.out.println("RESPONSE : " + response + " *********");
+        logger.info("creating new lease request...!");
+        lease.setStatus("PENDING");
+        lease.setCreatedAt(LocalDateTime.now());
+        logger.info("created new lease request...and sent for first level approval..!");
+        sendApprovalEmail(Long.valueOf(lease.getId()), FIRST_LEVEL_APPROVAL);
+        return leaseRepository.save(lease);
     }
 
 
     public String getCreditReport() {
-            String url = "http://localhost:8081/1/creditReport";  // Your service URL
-            return restTemplate.getForObject(url, String.class);
+        String url = "http://localhost:8081/1/creditReport";  // Your service URL
+        return restTemplate.getForObject(url, String.class);
     }
 
     // Fallback method (same signature as main method)
@@ -154,7 +166,6 @@ public class LeaseApprovalService {
         lease.setApprovalLevel(1);
         saveLease(lease); // Persist changes
 
-
         Approval approval = new Approval();
         approval.setLeaseId(Long.valueOf(leaseId));
         approval.setApprovedBy(approver);
@@ -162,6 +173,9 @@ public class LeaseApprovalService {
         approval.setComments("FIRST_LEVEL_APPROVED");
         approval.setTimestamp(LocalDateTime.now());
         approvalRepository.save(approval);
+
+        // sending email to second level for approval
+        sendApprovalEmail(Long.valueOf(leaseId), SECOND_LEVEL_APPROVAL);
 
         return lease;
     }
@@ -228,6 +242,7 @@ public class LeaseApprovalService {
 
         throw new RuntimeException("Invalid approval sequence or status.");
     }
+
     // Reject lease
     public Lease rejectLease(String leaseId, String approver) {
         Lease lease = getLeaseById(leaseId);
@@ -251,14 +266,35 @@ public class LeaseApprovalService {
         leaseRepository.save(lease);
     }
 
-    public List<Lease> searchLeases(String partnerName, String assetType, String status, LocalDateTime startDate, LocalDateTime endDate,Integer pageNumber,
+    public List<Lease> searchLeases(String partnerName, String assetType, String status, LocalDateTime startDate, LocalDateTime endDate, Integer pageNumber,
                                     Integer pageSize,
                                     String sortBy,
                                     String dir) {
-        Sort sort = dir.equalsIgnoreCase("asc")?Sort.by(sortBy).ascending()
-                :Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(pageNumber,pageSize,sort);
-        return leaseRepository.searchLeases(partnerName, assetType, status, startDate, endDate,pageable).getContent();
+        Sort sort = dir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
+        return leaseRepository.searchLeases(partnerName, assetType, status, startDate, endDate, pageable).getContent();
+    }
+
+    public void sendApprovalEmail(Long id, String level) {
+        if (FIRST_LEVEL_APPROVAL.equals(level)) {
+            List<String> listOfManagersEmail = userRepository.findAll().stream()
+                    .filter(e -> e.getRole().equals("MANAGER"))
+                    .map(e -> e.getEmail())
+                    .collect(Collectors.toList());
+            for (String email : listOfManagersEmail) {
+                emailService.sendEmail(email, "Please give the first level approval...!");
+            }
+        } else {
+            List<String> listOfManagersEmail = userRepository.findAll().stream()
+                    .filter(e -> e.getRole().equals("ADMIN"))
+                    .map(e -> e.getEmail())
+                    .collect(Collectors.toList());
+            for (String email : listOfManagersEmail) {
+                emailService.sendEmail(email, "Please give the second level approval...!");
+            }
+        }
+
     }
 
 }

@@ -35,7 +35,7 @@ public class ForgotPasswordService {
             resetToken.setExpiryDate(LocalDateTime.now().plusMinutes(10));
             tokenRepository.save(resetToken);
 
-            String resetLink = "http://localhost:8081/api/reset-password?token=" + token;
+            String resetLink = "http://localhost:8080/leases/reset-password?token=" + token;
             emailService.sendEmail(email,resetLink);
         }
     }

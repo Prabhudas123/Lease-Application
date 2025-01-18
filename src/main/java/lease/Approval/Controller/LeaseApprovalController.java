@@ -6,6 +6,7 @@ import lease.Approval.Utils.AppConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/leases")
+@PreAuthorize("hasRole('ADMIN')")
 public class LeaseApprovalController {
 
     @Autowired
@@ -23,14 +25,15 @@ public class LeaseApprovalController {
 
 
     @PostMapping("/create")
+    @PreAuthorize("hasAuthority('ADMIN_CREATE')")
     public Lease createLease(@RequestBody Lease lease) throws ExecutionException, InterruptedException {
         return leaseApprovalService.createLease(lease);
     }
 
-//    @PostMapping("/{id}/approve")
-//    public String approveLease(@PathVariable Long id, @RequestParam String approver, @RequestParam String comments) {
-//        return leaseApprovalService.approveLease(id, approver, comments);
-//    }
+    @PostMapping("/{id}/approve")
+    public void approveLease(@PathVariable Long id, @RequestParam String levelOfApproval) {
+        leaseApprovalService.sendApprovalEmail(id, levelOfApproval);
+    }
 
 //    @PostMapping("/{id}/deny")
 //    public String denyLease(@PathVariable Long id, @RequestParam String approver, @RequestParam String comments) {
@@ -45,12 +48,14 @@ public class LeaseApprovalController {
     }
 
     @PostMapping("/{leaseId}/approve/first-level")
+    @PreAuthorize("hasAuthority('MANAGER_CREATE')")
     public ResponseEntity<Lease> approveFirstLevel(@PathVariable String leaseId, @RequestParam String approver) {
         Lease lease = leaseApprovalService.approveFirstLevel(leaseId, approver);
         return ResponseEntity.ok(lease);
     }
 
     @PostMapping("/{leaseId}/approve/second-level")
+    @PreAuthorize("hasAuthority('ADMIN_CREATE')")
     public ResponseEntity<Lease> approveSecondLevel(@PathVariable String leaseId, @RequestParam String approver) {
         Lease lease = leaseApprovalService.approveSecondLevel(leaseId, approver);
         return ResponseEntity.ok(lease);
@@ -73,7 +78,7 @@ public class LeaseApprovalController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        List<Lease> leases = leaseApprovalService.searchLeases(partnerName, assetType, status, startDate, endDate,pageNumber,pageSize,sortBy,sortDir);
+        List<Lease> leases = leaseApprovalService.searchLeases(partnerName, assetType, status, startDate, endDate, pageNumber, pageSize, sortBy, sortDir);
         return ResponseEntity.ok(leases);
     }
 
